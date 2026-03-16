@@ -924,6 +924,11 @@ window.startDM=async u=>{
   document.getElementById('searchRes').classList.add('gone');
   openChat(id,'dm');closeSb();
 };
+// загружаем пользователя свежо из Firestore — сохраняет joinedAt Timestamp
+window.startDMbyUid=async uid=>{
+  const snap=await getDoc(doc(db,'users',uid));
+  if(snap.exists()) startDM(snap.data());
+};
 
 // ═══ OPEN CHAT ═══
 window.openChat=async(id,type)=>{
@@ -1577,10 +1582,30 @@ function openUserProfile(u){
   const ats=document.getElementById('pvAts');
   ats.innerHTML=(u.usernames||[]).map(at=>`<span style="font-size:11px;color:var(--acc);background:var(--adim);padding:2px 8px;border-radius:10px;">${esc(at)}</span>`).join('');
   document.getElementById('pvBio').textContent=u.bio||'Пользователь ничего не написал о себе';
-  const joined=u.joinedAt?.toDate?u.joinedAt.toDate():null;
+  // joinedAt может быть Timestamp, Date, секунды или null
+  let joined=null;
+  if(u.joinedAt){
+    if(typeof u.joinedAt.toDate==='function') joined=u.joinedAt.toDate();
+    else if(u.joinedAt.seconds) joined=new Date(u.joinedAt.seconds*1000);
+    else if(u.joinedAt instanceof Date) joined=u.joinedAt;
+    else if(typeof u.joinedAt==='string') joined=new Date(u.joinedAt);
+  }
+  // если нет joinedAt — загрузим свежо из Firestore
+  if(!joined && u.uid){
+    try{
+      const fresh=await getDoc(doc(db,'users',u.uid));
+      if(fresh.exists()){
+        const jat=fresh.data().joinedAt;
+        if(jat?.toDate) joined=jat.toDate();
+        else if(jat?.seconds) joined=new Date(jat.seconds*1000);
+      }
+    }catch(e){}
+  }
   const daysAgo=joined?Math.floor((Date.now()-joined.getTime())/86400000):null;
   const ago=daysAgo===null?'':daysAgo===0?' (сегодня)':daysAgo===1?' (вчера)':` (${daysAgo} дн. назад)`;
-  document.getElementById('pvJoined').textContent=joined?joined.toLocaleDateString('ru',{year:'numeric',month:'long',day:'numeric'})+ago:'—';
+  document.getElementById('pvJoined').textContent=joined
+    ?joined.toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})+ago
+    :'Недавно';
   window._pvUser=u;
   document.getElementById('userProfileMo').classList.add('open');
 }
