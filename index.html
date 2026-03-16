@@ -563,7 +563,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
     <div class="theme-grid" id="themeGrid"></div>
     <div class="theme-custom">
       <label>Свой цвет:</label>
-      <input type="color" class="color-input" id="customColor" value="#e8000d" oninput="applyTheme(this.value)">
+      <input type="color" class="color-input" id="customColor" value="#e8000d" oninput="window.applyTheme(this.value)">
     </div>
     <div class="fl" style="margin-bottom:8px;margin-top:8px;">Тёмная / Светлая тема</div>
     <div style="display:flex;gap:8px;">
@@ -664,15 +664,21 @@ function setActive(id){
 
 // ═══ THEME ═══
 const THEMES=['#e8000d','#3b82f6','#22c55e','#7c6aff','#f97316','#ec4899','#06b6d4','#84cc16','#fbbf24','#ef4444','#a855f7','#14b8a6'];
-function applyTheme(color){
+// текущий цвет храним отдельно чтобы не зависеть от getComputedStyle
+let currentAccent = localStorage.getItem('suka_theme') || '#e8000d';
+
+window.applyTheme=color=>{
+  currentAccent=color;
   const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
   document.documentElement.style.setProperty('--acc',color);
-  document.documentElement.style.setProperty('--acc2',lighten(color,15));
+  document.documentElement.style.setProperty('--acc2',lighten(color,20));
   document.documentElement.style.setProperty('--adim',`rgba(${r},${g},${b},.13)`);
   document.documentElement.style.setProperty('--aglow',`rgba(${r},${g},${b},.28)`);
   localStorage.setItem('suka_theme',color);
-  document.getElementById('customColor').value=color;
-}
+  const cc=document.getElementById('customColor');
+  if(cc)cc.value=color;
+  renderThemeGrid();
+};
 function lighten(hex,pct){
   let r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
   r=Math.min(255,r+pct);g=Math.min(255,g+pct);b=Math.min(255,b+pct);
@@ -704,22 +710,21 @@ window.setDarkMode=dark=>{
 };
 
 window.openSettings=()=>{
-  const grid=document.getElementById('themeGrid');
-  const cur=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim();
-  grid.innerHTML=THEMES.map(c=>`<div class="theme-dot${c===cur?' active':''}" style="background:${c}" onclick="applyTheme('${c}');renderThemeGrid()"></div>`).join('');
+  renderThemeGrid();
+  const cc=document.getElementById('customColor');
+  if(cc)cc.value=currentAccent;
   document.getElementById('settingsMo').classList.add('open');
 };
 window.renderThemeGrid=()=>{
   const grid=document.getElementById('themeGrid');
-  const cur=getComputedStyle(document.documentElement).getPropertyValue('--acc').trim();
-  grid.innerHTML=THEMES.map(c=>`<div class="theme-dot${c===cur?' active':''}" style="background:${c}" onclick="applyTheme('${c}');renderThemeGrid()"></div>`).join('');
+  if(!grid)return;
+  grid.innerHTML=THEMES.map(c=>`<div class="theme-dot${c===currentAccent?' active':''}" style="background:${c}" onclick="window.applyTheme('${c}')"></div>`).join('');
 };
 
 // Load saved theme
-const savedTheme=localStorage.getItem('suka_theme');
-if(savedTheme)applyTheme(savedTheme);
+if(currentAccent) window.applyTheme(currentAccent);
 const savedDark=localStorage.getItem('suka_dark');
-if(savedDark==='0')setDarkMode(false);
+if(savedDark==='0') window.setDarkMode(false);
 
 // ═══ AUTH STATE ═══
 onAuthStateChanged(auth,async user=>{
