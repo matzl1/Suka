@@ -188,7 +188,8 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 .ctxd{height:1px;background:var(--border);margin:3px 0;}
 
 /* MODALS */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(12px);z-index:500;display:none;align-items:center;justify-content:center;padding:18px;overflow-y:auto;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(12px);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto;cursor:pointer;}
+.mo .mc{cursor:default;}
 .mo.open{display:flex;}
 .mc{background:var(--bg1);border:1px solid var(--border2);border-radius:18px;padding:22px;width:100%;max-width:380px;position:relative;box-shadow:var(--shadow);margin:auto;}
 .mc h3{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;color:var(--acc);margin-bottom:3px;}
@@ -489,7 +490,9 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
               <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
               <textarea id="msgInp" placeholder="Написать..." rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea>
             </div>
-            <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
+            <button class="sndbtn" id="micBtn"
+              title="Зажми для записи / отпусти для отправки"
+              style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
             <button class="sndbtn" id="sendBtn" onclick="sendMsg()">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
@@ -522,7 +525,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- MY PROFILE -->
-<div class="mo" id="myProfileMo">
+<div class="mo" id="myProfileMo" onclick="if(event.target===this)closeMo('myProfileMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('myProfileMo')">✕</button>
     <h3>Мой профиль</h3><p>Измени данные и юзернеймы</p>
@@ -545,7 +548,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- USER PROFILE VIEW -->
-<div class="mo" id="userProfileMo">
+<div class="mo" id="userProfileMo" onclick="if(event.target===this)closeMo('userProfileMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('userProfileMo')">✕</button>
     <h3>Профиль</h3>
@@ -561,7 +564,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- CHAT INFO (group/channel) -->
-<div class="mo" id="chatInfoMo">
+<div class="mo" id="chatInfoMo" onclick="if(event.target===this)closeMo('chatInfoMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('chatInfoMo')">✕</button>
     <div class="pv-head">
@@ -585,7 +588,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- CREATE GROUP -->
-<div class="mo" id="createGroupMo">
+<div class="mo" id="createGroupMo" onclick="if(event.target===this)closeMo('createGroupMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('createGroupMo')">✕</button>
     <h3>Новая группа</h3><p>Создай групповой чат</p>
@@ -602,7 +605,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- CREATE CHANNEL -->
-<div class="mo" id="createChannelMo">
+<div class="mo" id="createChannelMo" onclick="if(event.target===this)closeMo('createChannelMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('createChannelMo')">✕</button>
     <h3>Новый канал</h3><p>Только ты можешь писать</p>
@@ -618,7 +621,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- SETTINGS (theme) -->
-<div class="mo" id="settingsMo">
+<div class="mo" id="settingsMo" onclick="if(event.target===this)closeMo('settingsMo')">
   <div class="mc">
     <button class="mcx" onclick="closeMo('settingsMo')">✕</button>
     <h3>Настройки</h3><p>Кастомизация дизайна</p>
@@ -1134,7 +1137,7 @@ function inputHTML(ph='Написать...'){
       <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
       <textarea id="msgInp" placeholder="${ph}" rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea>
     </div>
-    <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
+    <button class="sndbtn" id="micBtn" title="Зажми для записи" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
     <button class="sndbtn" id="sendBtn" onclick="sendMsg()">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
@@ -1143,9 +1146,8 @@ function inputHTML(ph='Написать...'){
 function rebindInput(){
   setTimeout(()=>{
     document.getElementById('sendBtn')?.addEventListener('touchend',e=>{e.preventDefault();sendMsg();});
-    document.getElementById('micBtn')?.addEventListener('touchend',e=>{e.preventDefault();startRecordingClick();});
     document.getElementById('msgInp')?.addEventListener('focus',()=>{setTimeout(()=>{document.getElementById('mwrap').scrollTop=999999;},450);});
-    updateSendBtn();
+    bindMicBtn();
   },50);
 }
 
@@ -1909,9 +1911,8 @@ window.toggleEmoji=()=>document.getElementById('ep').classList.toggle('open');
 window.ins=e=>{const inp=document.getElementById('msgInp');if(inp){inp.value+=e;inp.focus();}};
 
 document.getElementById('sendBtn')?.addEventListener('touchend',e=>{e.preventDefault();sendMsg();});
-document.getElementById('micBtn')?.addEventListener('touchend',e=>{e.preventDefault();startRecordingClick();});
 document.getElementById('msgInp')?.addEventListener('focus',()=>{setTimeout(()=>{document.getElementById('mwrap').scrollTop=999999;},450);});
-updateSendBtn();
+bindMicBtn();
 
 // ═══ IMAGE UTILS ═══
 function compressImg(file,maxSz,q){
@@ -1951,85 +1952,82 @@ window.notify=(icon,title,msg,type)=>{
 //  ГОЛОСОВЫЕ СООБЩЕНИЯ
 // ═══════════════════════════════
 let mediaRecorder=null, audioChunks=[], recInterval=null, recSeconds=0;
-let voiceHoldTimer=null, isHolding=false;
 
-// Обновляем кнопку отправки — показываем микрофон или стрелку
-window.updateSendBtn=()=>{
-  const inp=document.getElementById('msgInp');
-  const micBtn=document.getElementById('micBtn');
-  const sendBtn=document.getElementById('sendBtn');
-  if(!micBtn||!sendBtn) return;
-  const hasText=inp&&inp.value.trim().length>0;
-  micBtn.style.display=hasText?'none':'flex';
-  sendBtn.style.display=hasText?'flex':'none';
-};
+function bindMicBtn(){
+  const mb=document.getElementById('micBtn');
+  if(!mb) return;
+  mb.onmousedown=e=>{ e.preventDefault(); startRecording(); };
+  mb.onmouseup=e=>{ e.preventDefault(); if(mediaRecorder?.state==='recording') stopAndSendVoice(); else cancelRecording(); };
+  mb.onmouseleave=e=>{ if(mediaRecorder?.state==='recording') stopAndSendVoice(); };
+  mb.ontouchstart=e=>{ e.preventDefault(); startRecording(); };
+  mb.ontouchend=e=>{ e.preventDefault(); if(mediaRecorder?.state==='recording') stopAndSendVoice(); else cancelRecording(); };
+}
 
-// Клик по микрофону — начать/остановить запись
-window.startRecordingClick=async()=>{
-  if(mediaRecorder&&mediaRecorder.state==='recording'){
-    stopAndSendVoice();
-  } else {
-    await startRecording();
-  }
+window.updateSendBtn=()=>{}; // not needed anymore
+window.sendOrVoice=()=>{ sendMsg(); };
+window.startVoiceHold=()=>{};
+window.endVoiceHold=()=>{};
+window.startRecordingClick=()=>{
+  if(mediaRecorder?.state==='recording') stopAndSendVoice();
+  else startRecording();
 };
-
-window.sendOrVoice=()=>{
-  const inp=document.getElementById('msgInp');
-  if(inp&&inp.value.trim()) sendMsg();
-};
-window.startVoiceHold=async(e)=>{};
-window.endVoiceHold=async(e)=>{};
 
 async function startRecording(){
   if(!CHAT.id&&CHAT.type!=='fav'){ notify('⚠️','Выбери чат','',''); return; }
+  if(mediaRecorder?.state==='recording') return;
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     audioChunks=[];
     recSeconds=0;
-    mediaRecorder=new MediaRecorder(stream);
+    const mimeType=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/mp4';
+    mediaRecorder=new MediaRecorder(stream,{mimeType});
     mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
     mediaRecorder.start(100);
-    // show rec bar
     const rb=document.getElementById('recBar');
     if(rb) rb.classList.add('show');
     const mb=document.getElementById('micBtn');
-    if(mb){ mb.textContent='⏹'; mb.style.background='var(--acc)'; }
+    if(mb){ mb.textContent='⏹'; mb.style.background='var(--acc)'; mb.style.color='#fff'; }
     recInterval=setInterval(()=>{
       recSeconds++;
-      const m=Math.floor(recSeconds/60), s=recSeconds%60;
-      document.getElementById('recTime').textContent=`${m}:${String(s).padStart(2,'0')}`;
+      const m=Math.floor(recSeconds/60),s=recSeconds%60;
+      const rt=document.getElementById('recTime');
+      if(rt) rt.textContent=`${m}:${String(s).padStart(2,'0')}`;
     },1000);
-    notify('🎤','Запись...','Отпусти чтобы отправить','');
   } catch(e){ notify('⚠️','Нет доступа к микрофону',e.message,''); }
 }
 
-window.cancelRecording=()=>{
-  if(mediaRecorder){ mediaRecorder.stream.getTracks().forEach(t=>t.stop()); mediaRecorder=null; }
+function resetMicBtn(){
   clearInterval(recInterval);
+  const rb=document.getElementById('recBar');if(rb) rb.classList.remove('show');
+  const mb=document.getElementById('micBtn');
+  if(mb){ mb.textContent='🎤'; mb.style.background='var(--bg3)'; mb.style.color='var(--t1)'; }
+}
+
+window.cancelRecording=()=>{
+  if(mediaRecorder){ mediaRecorder.stream?.getTracks().forEach(t=>t.stop()); mediaRecorder=null; }
   audioChunks=[];recSeconds=0;
-  const rb2=document.getElementById('recBar');if(rb2) rb2.classList.remove('show');
-  const mb2=document.getElementById('micBtn');if(mb2){ mb2.textContent='🎤'; mb2.style.background='var(--bg3)'; }
+  resetMicBtn();
 };
 
 window.stopAndSendVoice=async()=>{
-  if(!mediaRecorder||mediaRecorder.state!=='recording') return;
+  if(!mediaRecorder||mediaRecorder.state!=='recording'){ resetMicBtn(); return; }
   mediaRecorder.stop();
-  mediaRecorder.stream.getTracks().forEach(t=>t.stop());
-  clearInterval(recInterval);
-  const rb2=document.getElementById('recBar');if(rb2) rb2.classList.remove('show');
-  const mb2=document.getElementById('micBtn');if(mb2){ mb2.textContent='🎤'; mb2.style.background='var(--bg3)'; }
-  await new Promise(r=>setTimeout(r,200));
-  const blob=new Blob(audioChunks,{type:'audio/webm'});
+  mediaRecorder.stream?.getTracks().forEach(t=>t.stop());
+  resetMicBtn();
+  await new Promise(r=>setTimeout(r,300));
   const dur=recSeconds;
+  if(!audioChunks.length||dur<1){ audioChunks=[]; return; }
+  const mimeType=audioChunks[0]?.type||'audio/webm';
+  const blob=new Blob(audioChunks,{type:mimeType});
   audioChunks=[];
-  // convert to base64
   const reader=new FileReader();
   reader.onload=async e=>{
-    const b64=e.target.result;
     try{
-      const col=CHAT.type==='fav'?collection(db,'favorites',ME.uid,'messages'):collection(db,'chats',CHAT.id,'messages');
+      const col=CHAT.type==='fav'
+        ?collection(db,'favorites',ME.uid,'messages')
+        :collection(db,'chats',CHAT.id,'messages');
       await addDoc(col,{
-        text:'',voiceURL:b64,voiceDur:dur,
+        text:'',voiceURL:e.target.result,voiceDur:dur,
         uid:ME.uid,author:ME.name,color:ME.color,
         time:serverTimestamp(),edited:false,read:false,reactions:{}
       });
@@ -2039,7 +2037,7 @@ window.stopAndSendVoice=async()=>{
         await updateDoc(doc(db,'chats',CHAT.id),ud);
       }
       notify('✅','Голосовое отправлено!','','ok');
-    } catch(er){ notify('⚠️','Ошибка',er.message,''); }
+    }catch(er){ notify('⚠️','Ошибка',er.message,''); }
   };
   reader.readAsDataURL(blob);
 };
