@@ -641,7 +641,10 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 <div class="mo" id="wallpaperMo">
   <div class="mc">
     <button class="mcx" onclick="closeMo('wallpaperMo')">✕</button>
-    <h3>Обои чата</h3><p>Выбери фон для этого чата</p>
+    <h3>Обои чата</h3><p>Выбери фон или цвет для этого чата</p>
+    <div class="fl" style="margin-bottom:8px;">🎨 Цвета</div>
+    <div id="wpColorGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:14px;"></div>
+    <div class="fl" style="margin-bottom:8px;">🖼️ Фото</div>
     <div class="wallpaper-grid" id="wallpaperGrid"></div>
     <button class="mbtn gh" onclick="document.getElementById('wpCustomInput').click()">📁 Своё фото из галереи</button>
     <button class="mbtn gh" onclick="removeWallpaper()">✕ Убрать обои</button>
@@ -1120,12 +1123,30 @@ window.openChat=async(id,type)=>{
 };
 
 function inputHTML(ph='Написать...'){
-  return`<div class="izone"><div class="irow"><div class="ibox"><button class="iico" onclick="toggleEmoji()">😊</button><button class="iico" onclick="document.getElementById('photoInput').click()">📷</button><textarea id="msgInp" placeholder="${ph}" rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea></div><button class="sndbtn" id="sendBtn" onclick="sendMsg()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>`;
+  return`<div class="rec-bar gone" id="recBar">
+    <div class="rec-dot"></div>
+    <span class="rec-time" id="recTime">0:00</span>
+    <button class="rec-cancel" onclick="cancelRecording()">✕ Отмена</button>
+    <button class="rec-send" onclick="stopAndSendVoice()">Отправить ▶</button>
+  </div>
+  <div class="izone"><div class="irow">
+    <div class="ibox">
+      <button class="iico" onclick="toggleEmoji()">😊</button>
+      <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
+      <textarea id="msgInp" placeholder="\${ph}" rows="1" oninput="autoResize(this);handleTypingInput();updateSendBtn();" onkeydown="handleKey(event)"></textarea>
+    </div>
+    <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое сообщение" style="background:var(--bg3);box-shadow:none;">🎤</button>
+    <button class="sndbtn" id="sendBtn" onclick="sendMsg()" style="display:none;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div></div>`;
 }
 function rebindInput(){
   setTimeout(()=>{
     document.getElementById('sendBtn')?.addEventListener('touchend',e=>{e.preventDefault();sendMsg();});
+    document.getElementById('micBtn')?.addEventListener('touchend',e=>{e.preventDefault();startRecordingClick();});
     document.getElementById('msgInp')?.addEventListener('focus',()=>{setTimeout(()=>{document.getElementById('mwrap').scrollTop=999999;},450);});
+    updateSendBtn();
   },50);
 }
 
@@ -1161,6 +1182,13 @@ window.openFav=async()=>{
 };
 
 // ═══ WALLPAPERS ═══
+const WP_COLORS=[
+  '#1a1a1a','#0d1117','#0a192f','#1a0a2e','#0a2e1a','#2e1a0a',
+  '#2e0a0a','#1a2e2e','#2e2e0a','#0a0a2e','#1a0a0a','#2a1a2e',
+  '#3b82f6','#7c6aff','#22c55e','#f97316','#ec4899','#06b6d4',
+  '#ffffff','#f0f0f0','#e8e8e8','#d0d0d0','#a0a0a0','#606060',
+];
+
 const WP_PRESETS=[
   {label:'Нет',url:''},
   {label:'Горы',url:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=60'},
@@ -1176,13 +1204,32 @@ const WP_PRESETS=[
 function loadWallpaper(chatId){
   const wp=localStorage.getItem('wp_'+chatId)||'';
   const mwrap=document.getElementById('mwrap');
-  if(wp){mwrap.style.backgroundImage=`url('${wp}')`;mwrap.style.backgroundSize='cover';}
-  else{mwrap.style.backgroundImage='';mwrap.style.backgroundSize='';}
+  if(!wp){mwrap.style.backgroundImage='';mwrap.style.background='';return;}
+  // если это цвет (начинается с #) — ставим как цвет фона
+  if(wp.startsWith('#')){
+    mwrap.style.backgroundImage='';
+    mwrap.style.background=wp;
+  } else {
+    mwrap.style.background='';
+    mwrap.style.backgroundImage=`url('${wp}')`;
+    mwrap.style.backgroundSize='cover';
+    mwrap.style.backgroundPosition='center';
+  }
 }
 
 window.openWallpaperPicker=()=>{
   if(!CHAT.id)return;
   const cur=localStorage.getItem('wp_'+CHAT.id)||'';
+  // render colors
+  const colorGrid=document.getElementById('wpColorGrid');
+  colorGrid.innerHTML=WP_COLORS.map(c=>`
+    <div onclick="setWallpaper('${c}')" style="
+      width:100%;aspect-ratio:1;border-radius:8px;background:${c};cursor:pointer;
+      border:2px solid ${cur===c?'var(--acc)':'transparent'};transition:.15s;
+      box-shadow:${cur===c?'0 0 0 2px var(--acc)':''};
+      display:flex;align-items:center;justify-content:center;font-size:14px;
+    ">${cur===c?'✓':''}</div>`).join('');
+  // render photo presets
   const grid=document.getElementById('wallpaperGrid');
   grid.innerHTML=WP_PRESETS.map(wp=>`
     <div class="wp-item${cur===wp.url?' active':''}" onclick="setWallpaper('${wp.url}')">
@@ -1855,8 +1902,10 @@ window.autoResize=el=>{el.style.height='auto';el.style.height=Math.min(el.scroll
 window.toggleEmoji=()=>document.getElementById('ep').classList.toggle('open');
 window.ins=e=>{const inp=document.getElementById('msgInp');if(inp){inp.value+=e;inp.focus();}};
 
-document.getElementById('sendBtn').addEventListener('touchend',e=>{e.preventDefault();sendMsg();});
-document.getElementById('msgInp').addEventListener('focus',()=>{setTimeout(()=>{document.getElementById('mwrap').scrollTop=999999;},450);});
+document.getElementById('sendBtn')?.addEventListener('touchend',e=>{e.preventDefault();sendMsg();});
+document.getElementById('micBtn')?.addEventListener('touchend',e=>{e.preventDefault();startRecordingClick();});
+document.getElementById('msgInp')?.addEventListener('focus',()=>{setTimeout(()=>{document.getElementById('mwrap').scrollTop=999999;},450);});
+updateSendBtn();
 
 // ═══ IMAGE UTILS ═══
 function compressImg(file,maxSz,q){
@@ -1898,34 +1947,32 @@ window.notify=(icon,title,msg,type)=>{
 let mediaRecorder=null, audioChunks=[], recInterval=null, recSeconds=0;
 let voiceHoldTimer=null, isHolding=false;
 
+// Обновляем кнопку отправки — показываем микрофон или стрелку
+window.updateSendBtn=()=>{
+  const inp=document.getElementById('msgInp');
+  const micBtn=document.getElementById('micBtn');
+  const sendBtn=document.getElementById('sendBtn');
+  if(!micBtn||!sendBtn) return;
+  const hasText=inp&&inp.value.trim().length>0;
+  micBtn.style.display=hasText?'none':'flex';
+  sendBtn.style.display=hasText?'flex':'none';
+};
+
+// Клик по микрофону — начать/остановить запись
+window.startRecordingClick=async()=>{
+  if(mediaRecorder&&mediaRecorder.state==='recording'){
+    stopAndSendVoice();
+  } else {
+    await startRecording();
+  }
+};
+
 window.sendOrVoice=()=>{
   const inp=document.getElementById('msgInp');
   if(inp&&inp.value.trim()) sendMsg();
-  // если поле пустое — отправка по клику не делает ничего
-  // голосовое — только по зажатию
 };
-
-window.startVoiceHold=async(e)=>{
-  const inp=document.getElementById('msgInp');
-  if(inp&&inp.value.trim()) return; // если есть текст — не начинаем запись
-  if(e) e.preventDefault();
-  isHolding=true;
-  // задержка 300мс — чтобы отличить клик от зажатия
-  voiceHoldTimer=setTimeout(()=>{ if(isHolding) startRecording(); },300);
-};
-
-window.endVoiceHold=async(e)=>{
-  if(e) e.preventDefault();
-  clearTimeout(voiceHoldTimer);
-  if(!isHolding) return;
-  isHolding=false;
-  if(mediaRecorder&&mediaRecorder.state==='recording'){
-    if(recSeconds<1){ cancelRecording(); return; }
-    stopAndSendVoice();
-  } else {
-    sendMsg(); // короткий клик = отправить текст
-  }
-};
+window.startVoiceHold=async(e)=>{};
+window.endVoiceHold=async(e)=>{};
 
 async function startRecording(){
   if(!CHAT.id&&CHAT.type!=='fav'){ notify('⚠️','Выбери чат','',''); return; }
@@ -1937,8 +1984,10 @@ async function startRecording(){
     mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
     mediaRecorder.start(100);
     // show rec bar
-    document.getElementById('recBar').classList.add('show');
-    document.getElementById('sendIcon').textContent='🎤';
+    const rb=document.getElementById('recBar');
+    if(rb) rb.classList.add('show');
+    const mb=document.getElementById('micBtn');
+    if(mb){ mb.textContent='⏹'; mb.style.background='var(--acc)'; }
     recInterval=setInterval(()=>{
       recSeconds++;
       const m=Math.floor(recSeconds/60), s=recSeconds%60;
@@ -1952,8 +2001,8 @@ window.cancelRecording=()=>{
   if(mediaRecorder){ mediaRecorder.stream.getTracks().forEach(t=>t.stop()); mediaRecorder=null; }
   clearInterval(recInterval);
   audioChunks=[];recSeconds=0;
-  document.getElementById('recBar').classList.remove('show');
-  document.getElementById('sendIcon').innerHTML=`<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  const rb2=document.getElementById('recBar');if(rb2) rb2.classList.remove('show');
+  const mb2=document.getElementById('micBtn');if(mb2){ mb2.textContent='🎤'; mb2.style.background='var(--bg3)'; }
 };
 
 window.stopAndSendVoice=async()=>{
@@ -1961,8 +2010,8 @@ window.stopAndSendVoice=async()=>{
   mediaRecorder.stop();
   mediaRecorder.stream.getTracks().forEach(t=>t.stop());
   clearInterval(recInterval);
-  document.getElementById('recBar').classList.remove('show');
-  document.getElementById('sendIcon').innerHTML=`<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  const rb2=document.getElementById('recBar');if(rb2) rb2.classList.remove('show');
+  const mb2=document.getElementById('micBtn');if(mb2){ mb2.textContent='🎤'; mb2.style.background='var(--bg3)'; }
   await new Promise(r=>setTimeout(r,200));
   const blob=new Blob(audioChunks,{type:'audio/webm'});
   const dur=recSeconds;
