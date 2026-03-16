@@ -30,8 +30,8 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 #auth{position:fixed;inset:0;overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10;}
 .abg{position:fixed;inset:0;overflow:hidden;pointer-events:none;}
 .abg::before,.abg::after{content:'';position:absolute;border-radius:50%;filter:blur(90px);}
-.abg::before{width:460px;height:460px;background:radial-gradient(circle,rgba(var(--acc-rgb),.13),transparent 70%);top:-110px;right:-70px;animation:bgp 6s ease-in-out infinite;}
-.abg::after{width:320px;height:320px;background:radial-gradient(circle,rgba(var(--acc-rgb),.07),transparent 70%);bottom:-60px;left:-60px;animation:bgp 6s ease-in-out infinite;animation-delay:3s;}
+.abg::before{width:460px;height:460px;background:radial-gradient(circle,var(--adim),transparent 70%);top:-110px;right:-70px;animation:bgp 6s ease-in-out infinite;}
+.abg::after{width:320px;height:320px;background:radial-gradient(circle,var(--aglow),transparent 70%);bottom:-60px;left:-60px;animation:bgp 6s ease-in-out infinite;animation-delay:3s;}
 @keyframes bgp{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
 .ac{position:relative;z-index:1;width:100%;max-width:365px;}
 .alogo{margin-bottom:24px;}
@@ -107,7 +107,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 .mwrap::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
 
 /* pinned */
-.pinbar{display:flex;align-items:center;gap:8px;padding:6px 13px;background:rgba(var(--acc-rgb),.06);border-bottom:1px solid var(--border);cursor:pointer;}
+.pinbar{display:flex;align-items:center;gap:8px;padding:6px 13px;background:var(--adim);border-bottom:1px solid var(--border);cursor:pointer;}
 .pinbar-txt{font-size:12px;color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pinbar-txt b{color:var(--acc);}
 
@@ -670,10 +670,13 @@ let currentAccent = localStorage.getItem('suka_theme') || '#e8000d';
 window.applyTheme=color=>{
   currentAccent=color;
   const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
-  document.documentElement.style.setProperty('--acc',color);
-  document.documentElement.style.setProperty('--acc2',lighten(color,20));
-  document.documentElement.style.setProperty('--adim',`rgba(${r},${g},${b},.13)`);
-  document.documentElement.style.setProperty('--aglow',`rgba(${r},${g},${b},.28)`);
+  const acc2=lighten(color,20);
+  const adim=`rgba(${r},${g},${b},.13)`;
+  const aglow=`rgba(${r},${g},${b},.28)`;
+  // inject/update <style> tag — самый надёжный способ
+  let styleEl=document.getElementById('dynamic-theme');
+  if(!styleEl){styleEl=document.createElement('style');styleEl.id='dynamic-theme';document.head.appendChild(styleEl);}
+  styleEl.textContent=`:root{--acc:${color}!important;--acc2:${acc2}!important;--adim:${adim}!important;--aglow:${aglow}!important;}`;
   localStorage.setItem('suka_theme',color);
   const cc=document.getElementById('customColor');
   if(cc)cc.value=color;
