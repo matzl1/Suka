@@ -507,14 +507,15 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
       <div class="pv-at" id="ciAt">...</div>
       <div class="pv-bio" id="ciDesc"></div>
     </div>
-    <div class="info-row"><span class="info-icon">👥</span><div><div class="info-label">Участники</div><div class="info-val" id="ciCount">...</div></div></div>
+    <div class="info-row"><span class="info-icon">👥</span><div><div class="info-label" id="ciCountLabel">Участники</div><div class="info-val" id="ciCount">...</div></div></div>
     <div class="info-row"><span class="info-icon">👑</span><div><div class="info-label">Создатель</div><div class="info-val" id="ciOwner">...</div></div></div>
-    <div class="info-row"><span class="info-icon">🔗</span><div><div class="info-label">Ссылка</div><div class="info-val" id="ciLink" style="cursor:pointer;color:var(--acc)" onclick="copyInviteLink()">...</div></div></div>
+    <div class="info-row"><span class="info-icon">🔗</span><div><div class="info-label">Ссылка для приглашения</div><div class="info-val" id="ciLink" style="cursor:pointer;color:var(--acc)" onclick="copyInviteLink()">...</div></div></div>
     <div id="ciMembsList" style="margin-top:10px;max-height:160px;overflow-y:auto;"></div>
+    <!-- Только для групп — в каналах добавлять нельзя, люди подписываются сами -->
     <div id="ciAdmin" class="gone">
-      <div class="fg" style="margin-top:12px;"><label class="fl">Добавить участника</label>
+      <div class="fg" style="margin-top:12px;"><label class="fl">Добавить участника в группу</label>
         <input class="fi" id="addMembAt" type="text" placeholder="@username" oninput="fmtAt(this)"></div>
-      <button class="mbtn gh" onclick="addMember()">Добавить</button>
+      <button class="mbtn gh" onclick="addMember()">Добавить в группу</button>
     </div>
     <button class="mbtn gh" id="leaveChatBtn" onclick="leaveChat()" style="margin-top:8px;">Покинуть</button>
   </div>
@@ -1435,6 +1436,7 @@ window.openChatInfo=async()=>{
   document.getElementById('ciDesc').textContent=data.desc||'';
   const wordMemb=CHAT.type==='channel'?'подписчиков':'участников';
   document.getElementById('ciCount').textContent=(data.members?.length||0)+' '+wordMemb;
+  document.getElementById('ciCountLabel').textContent=CHAT.type==='channel'?'Подписчики':'Участники';
   const ownerSnap=await getDoc(doc(db,'users',data.ownerId));
   document.getElementById('ciOwner').textContent=ownerSnap.exists()?ownerSnap.data().name:'Неизвестно';
   // invite link
@@ -1452,8 +1454,10 @@ window.openChatInfo=async()=>{
     </div>`;
   }
   document.getElementById('ciMembsList').innerHTML=mHtml;
-  document.getElementById('ciAdmin').classList.toggle('gone',data.ownerId!==ME.uid);
-  document.getElementById('leaveChatBtn').textContent=CHAT.type==='channel'?'Отписаться':'Покинуть группу';
+  // Для каналов — добавлять нельзя, только группы
+  const canAddMembers = data.ownerId===ME.uid && CHAT.type==='group';
+  document.getElementById('ciAdmin').classList.toggle('gone', !canAddMembers);
+  document.getElementById('leaveChatBtn').textContent=CHAT.type==='channel'?'Отписаться от канала':'Покинуть группу';
   document.getElementById('chatInfoMo').classList.add('open');
 };
 
