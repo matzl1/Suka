@@ -516,7 +516,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
         <input class="fi" id="addMembAt" type="text" placeholder="@username" oninput="fmtAt(this)"></div>
       <button class="mbtn gh" onclick="addMember()">Добавить</button>
     </div>
-    <button class="mbtn gh" onclick="leaveChat()" style="margin-top:8px;">Покинуть</button>
+    <button class="mbtn gh" id="leaveChatBtn" onclick="leaveChat()" style="margin-top:8px;">Покинуть</button>
   </div>
 </div>
 
@@ -549,7 +549,6 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
       <label class="fl">Тип</label>
       <select class="fi" id="chType"><option value="public">Открытый (виден всем)</option><option value="private">Закрытый (только по ссылке)</option></select>
     </div>
-    <div class="fg"><label class="fl">Подписчики (@username через запятую)</label><input class="fi" id="chMembs" type="text" placeholder="@ivan, @masha"></div>
     <button class="mbtn pr" onclick="createChannel()">Создать канал 📢</button>
   </div>
 </div>
@@ -860,7 +859,9 @@ window.searchAll=async val=>{
   res.classList.remove('gone');
   res.innerHTML='<div style="padding:7px 11px;font-size:12px;color:var(--t2)">Поиск...</div>';
   const search=val.startsWith('@')?val.toLowerCase():'@'+val.toLowerCase();
-  const searchHash=val.startsWith('#')?val.toLowerCase().slice(1):val.toLowerCase();
+  // если начинается с # — ищем только каналы и группы
+  const isHashSearch=val.startsWith('#');
+  const searchHash=isHashSearch?val.toLowerCase().slice(1):val.toLowerCase();
 
   // Search users
   const uSnap=await getDocs(collection(db,'users'));
@@ -892,21 +893,27 @@ window.searchAll=async val=>{
   pubChats.forEach(c=>{
     if(c.members?.includes(ME.uid))return;
     const icon=c.type==='channel'?'📢':'👥';
+    const btnText=c.type==='channel'?'Подписаться →':'Вступить →';
+    const count=c.members?.length||0;
+    const sub=c.type==='channel'?`${c.username||''} · ${count} подписчиков`:`${c.username||''} · ${count} участников`;
     html+=`<div class="sru" onclick="joinPublicChat('${c.id}','${c.type}')">
       <div class="av avsm ${colorOf(c.name)}" style="font-size:14px;">${icon}</div>
-      <div><div style="font-size:13px;font-weight:500">${esc(c.name)}</div><div style="font-size:11px;color:var(--t2)">${c.username||''} · ${c.members?.length||0} уч.</div></div>
-      <span style="margin-left:auto;font-size:11px;color:var(--acc);font-weight:600">Вступить →</span>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${esc(c.name)}</div><div style="font-size:11px;color:var(--t2)">${sub}</div></div>
+      <span style="font-size:11px;color:var(--acc);font-weight:600;flex-shrink:0">${btnText}</span>
     </div>`;
   });
   res.innerHTML=html||'<div style="padding:7px 11px;font-size:12px;color:var(--t2)">Не найдено 😕</div>';
 };
 
 window.joinPublicChat=async(chatId,type)=>{
-  await updateDoc(doc(db,'chats',chatId),{members:arrayUnion(ME.uid)});
+  const upd={members:arrayUnion(ME.uid)};
+  if(type==='channel') upd.subscribersCount=increment(1);
+  await updateDoc(doc(db,'chats',chatId),upd);
   document.getElementById('searchInput').value='';
   document.getElementById('searchRes').classList.add('gone');
   openChat(chatId,type);closeSb();
-  notify('✅','Вступил в чат!','','ok');
+  const msg=type==='channel'?'Вы подписались на канал!':'Вступил в группу!';
+  notify('✅',msg,'','ok');
 };
 
 window.startDM=async u=>{
@@ -949,7 +956,8 @@ window.openChat=async(id,type)=>{
     ctopAv.style.fontSize='17px';
     document.getElementById('ctopName').textContent=CHAT.data.name;
     const atStr=CHAT.data.username?`${CHAT.data.username} · `:'';
-    document.getElementById('ctopSub').textContent=`${atStr}${CHAT.data.members?.length||0} участников`;
+    const memberWord=CHAT.type==='channel'?'подписчиков':'участников';
+    document.getElementById('ctopSub').textContent=`${atStr}${CHAT.data.members?.length||0} ${memberWord}`;
     if(type==='channel'&&!isOwner){
       document.getElementById('inputArea').innerHTML=`<div class="channel-ro">📢 Только администратор может писать</div>`;
     } else {
@@ -1396,16 +1404,19 @@ window.createChannel=async()=>{
   let at=document.getElementById('chAt').value.trim().toLowerCase();
   const desc=document.getElementById('chDesc').value.trim();
   const chatType=document.getElementById('chType').value;
-  const membsRaw=document.getElementById('chMembs').value;
   if(!name){notify('⚠️','Введи название','','');return;}
   if(!at.startsWith('@'))at=at?'@'+at:'';
   if(at){
     const snap=await getDocs(query(collection(db,'chats'),where('username','==',at)));
     if(!snap.empty){notify('⚠️','@username уже занят','','');return;}
   }
-  const members=await resolveMemberUids(membsRaw);
-  const ref=await addDoc(collection(db,'chats'),{type:'channel',name,username:at,desc,chatType,members,ownerId:ME.uid,lastMsg:'',lastTime:serverTimestamp()});
-  ['chName','chAt','chDesc','chMembs'].forEach(id=>document.getElementById(id).value='');
+  // только создатель — подписчики приходят сами через поиск
+  const ref=await addDoc(collection(db,'chats'),{
+    type:'channel',name,username:at,desc,chatType,
+    members:[ME.uid],ownerId:ME.uid,
+    lastMsg:'',lastTime:serverTimestamp(),subscribersCount:1
+  });
+  ['chName','chAt','chDesc'].forEach(id=>document.getElementById(id).value='');
   closeMo('createChannelMo');notify('✅','Канал создан!',name,'ok');
   openChat(ref.id,'channel');
 };
@@ -1422,7 +1433,8 @@ window.openChatInfo=async()=>{
   document.getElementById('ciName').textContent=data.name;
   document.getElementById('ciAt').textContent=data.username||'нет @username';
   document.getElementById('ciDesc').textContent=data.desc||'';
-  document.getElementById('ciCount').textContent=(data.members?.length||0)+' участников';
+  const wordMemb=CHAT.type==='channel'?'подписчиков':'участников';
+  document.getElementById('ciCount').textContent=(data.members?.length||0)+' '+wordMemb;
   const ownerSnap=await getDoc(doc(db,'users',data.ownerId));
   document.getElementById('ciOwner').textContent=ownerSnap.exists()?ownerSnap.data().name:'Неизвестно';
   // invite link
@@ -1441,6 +1453,7 @@ window.openChatInfo=async()=>{
   }
   document.getElementById('ciMembsList').innerHTML=mHtml;
   document.getElementById('ciAdmin').classList.toggle('gone',data.ownerId!==ME.uid);
+  document.getElementById('leaveChatBtn').textContent=CHAT.type==='channel'?'Отписаться':'Покинуть группу';
   document.getElementById('chatInfoMo').classList.add('open');
 };
 
