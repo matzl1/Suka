@@ -1576,7 +1576,7 @@ window.handleAvatar=async input=>{
   input.value='';
 };
 
-function openUserProfile(u){
+async function openUserProfile(u){
   setAvEl(document.getElementById('pvAv'),u);
   document.getElementById('pvName').textContent=u.name||'';
   const ats=document.getElementById('pvAts');
