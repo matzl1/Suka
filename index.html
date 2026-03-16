@@ -476,7 +476,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
         <button class="epb" onclick="ins('⚡')">⚡</button><button class="epb" onclick="ins('👀')">👀</button>
       </div>
       <div id="inputArea">
-        <div class="rec-bar" id="recBar">
+        <div class="rec-bar gone" id="recBar">
           <div class="rec-dot"></div>
           <span class="rec-time" id="recTime">0:00</span>
           <button class="rec-cancel" onclick="cancelRecording()">✕ Отмена</button>
@@ -489,10 +489,9 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
               <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
               <textarea id="msgInp" placeholder="Написать..." rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea>
             </div>
-            <button class="sndbtn" id="sendBtn" onclick="sendOrVoice()"
-              onmousedown="startVoiceHold()" onmouseup="endVoiceHold()"
-              ontouchstart="startVoiceHold(event)" ontouchend="endVoiceHold(event)">
-              <svg id="sendIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
+            <button class="sndbtn" id="sendBtn" onclick="sendMsg()">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
         </div>
@@ -638,10 +637,10 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 </div>
 
 <!-- WALLPAPER PICKER -->
-<div class="mo" id="wallpaperMo">
-  <div class="mc">
+<div class="mo" id="wallpaperMo" onclick="if(event.target===this)closeMo('wallpaperMo')">
+  <div class="mc" style="max-height:85vh;overflow-y:auto;">
     <button class="mcx" onclick="closeMo('wallpaperMo')">✕</button>
-    <h3>Обои чата</h3><p>Выбери фон или цвет для этого чата</p>
+    <h3>Обои чата</h3><p>Выбери фон или цвет</p>
     <div class="fl" style="margin-bottom:8px;">🎨 Цвета</div>
     <div id="wpColorGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:14px;"></div>
     <div class="fl" style="margin-bottom:8px;">🖼️ Фото</div>
@@ -1133,10 +1132,10 @@ function inputHTML(ph='Написать...'){
     <div class="ibox">
       <button class="iico" onclick="toggleEmoji()">😊</button>
       <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
-      <textarea id="msgInp" placeholder="\${ph}" rows="1" oninput="autoResize(this);handleTypingInput();updateSendBtn();" onkeydown="handleKey(event)"></textarea>
+      <textarea id="msgInp" placeholder="${ph}" rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea>
     </div>
-    <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое сообщение" style="background:var(--bg3);box-shadow:none;">🎤</button>
-    <button class="sndbtn" id="sendBtn" onclick="sendMsg()" style="display:none;">
+    <button class="sndbtn" id="micBtn" onclick="startRecordingClick()" title="Голосовое" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
+    <button class="sndbtn" id="sendBtn" onclick="sendMsg()">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div></div>`;
@@ -1219,30 +1218,37 @@ function loadWallpaper(chatId){
 
 window.openWallpaperPicker=()=>{
   if(!CHAT.id)return;
+  renderWpGrid();
+  document.getElementById('wallpaperMo').classList.add('open');
+};
+
+function renderWpGrid(){
   const cur=localStorage.getItem('wp_'+CHAT.id)||'';
-  // render colors
+  // colors
   const colorGrid=document.getElementById('wpColorGrid');
   colorGrid.innerHTML=WP_COLORS.map(c=>`
     <div onclick="setWallpaper('${c}')" style="
       width:100%;aspect-ratio:1;border-radius:8px;background:${c};cursor:pointer;
-      border:2px solid ${cur===c?'var(--acc)':'transparent'};transition:.15s;
-      box-shadow:${cur===c?'0 0 0 2px var(--acc)':''};
-      display:flex;align-items:center;justify-content:center;font-size:14px;
-    ">${cur===c?'✓':''}</div>`).join('');
-  // render photo presets
+      border:2px solid ${cur===c?'var(--acc)':'rgba(255,255,255,.1)'};transition:.15s;
+      display:flex;align-items:center;justify-content:center;font-size:16px;
+    ">${cur===c?'<span style="text-shadow:0 1px 3px rgba(0,0,0,.8)">✓</span>':''}</div>`).join('');
+  // photos
   const grid=document.getElementById('wallpaperGrid');
   grid.innerHTML=WP_PRESETS.map(wp=>`
-    <div class="wp-item${cur===wp.url?' active':''}" onclick="setWallpaper('${wp.url}')">
-      ${wp.url?`<img src="${wp.url}" loading="lazy">`:`<div style="background:var(--bg3);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;">✕</div>`}
+    <div class="wp-item${cur===wp.url?' active':''}" onclick="setWallpaper('${wp.url}')" style="position:relative;">
+      ${wp.url
+        ?`<img src="${wp.url}" loading="lazy">`
+        :`<div style="background:var(--bg3);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;">✕</div>`}
       <span class="wp-item-label">${wp.label}</span>
+      ${cur===wp.url?`<div style="position:absolute;top:4px;right:4px;background:var(--acc);color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">✓</div>`:''}
     </div>`).join('');
-  document.getElementById('wallpaperMo').classList.add('open');
-};
+}
+
 window.setWallpaper=url=>{
   localStorage.setItem('wp_'+CHAT.id,url);
   loadWallpaper(CHAT.id);
-  closeMo('wallpaperMo');
-  notify('🖼️','Обои установлены!','','ok');
+  renderWpGrid(); // обновляем галочки без закрытия
+  notify('🖼️','Обои применены!','','ok');
 };
 window.setCustomWallpaper=async input=>{
   const file=input.files[0];if(!file)return;
