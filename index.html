@@ -386,6 +386,13 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 .rec-time{font-size:13px;color:var(--t1);flex:1;}
 .rec-cancel{background:none;border:none;color:var(--t2);cursor:pointer;font-size:13px;}
 .rec-send{background:var(--acc);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+.vc-msg{display:flex;flex-direction:column;align-items:center;padding:8px;gap:6px;}
+.vc-msg video{box-shadow:0 2px 12px rgba(0,0,0,0.25);border:3px solid var(--bg1);transition:transform 0.2s;}
+.vc-msg video:hover{transform:scale(1.02);}
+.vc-msg video:active{transform:scale(0.98);}
+#vcPreview{box-shadow:0 4px 16px rgba(0,0,0,0.3);border:4px solid var(--bg1);}
+#vcTimer{font-weight:600;font-family:monospace;font-size:18px;}
+#vcRecBtn,#vcSendBtn{min-width:140px;}
 </style>
 </head>
 <body>
@@ -1159,7 +1166,8 @@ function inputHTML(ph='Написать...'){
     <div class="ibox">
       <button class="iico" onclick="toggleEmoji()">😊</button>
       <button class="iico" onclick="document.getElementById('photoInput').click()">📷</button>
-      <textarea id="msgInp" placeholder="${ph}" rows="1" oninput="autoResize(this);handleTypingInput();" onkeydown="handleKey(event)"></textarea>
+<button class="iico" onclick="startVideoCircle()" id="videoCircleBtn" title="Видеосообщение">⭕</button>
+<textarea id="msgInp" placeholder="${ph}" rows="1"...></textarea>
     </div>
     <button class="sndbtn" id="micBtn" title="Зажми для записи" style="background:var(--bg3);box-shadow:none;color:var(--t1);">🎤</button>
     <button class="sndbtn" id="sendBtn" onclick="sendMsg()">
@@ -1339,6 +1347,7 @@ function buildMsgEl(m){
   const rrefHtml=m.replyTo?`<div class="rref" onclick="scrollToMsg('${m.replyTo.id}')"><div class="rref-a">${esc(m.replyTo.author)}</div><div class="rref-t">${esc(m.replyTo.text)}</div></div>`:'';
   const photoHtml=m.photoURL?`<img class="mphoto" src="${m.photoURL}" onclick="openPhoto('${m.photoURL}')" loading="lazy">`:'';
   const voiceHtml=m.voiceURL?buildVoiceHtml(m):'';
+  const videoCircleHtml=m.videoCircleURL?buildVideoCircleHtml(m):''; // ← ДОБАВИЛИ ЭТУ СТРОКУ
   const captionHtml=m.caption?`<div class="mt" style="margin-top:4px;font-style:italic;opacity:.8;">${esc(m.caption)}</div>`:'';
   const editBadge=m.edited?`<div class="medit">изменено</div>`:'';
   const reactsHtml=buildReacts(m);
@@ -1357,8 +1366,8 @@ function buildMsgEl(m){
 
   div.innerHTML=`${avHtml}<div class="mcol">${authorHtml}
     <div class="mb" oncontextmenu="showCtx(event,'${m.id}',${own})" ontouchstart="startLP(event,'${m.id}',${own})" ontouchend="endLP()">
-      ${rrefHtml}${voiceHtml}${photoHtml}${captionHtml}
-      ${(!m.photoURL&&!m.voiceURL)?`<div class="mt">${esc(m.text||'')}</div>`:''}
+      ${rrefHtml}${voiceHtml}${videoCircleHtml}${photoHtml}${captionHtml}
+      ${(!m.photoURL&&!m.voiceURL&&!m.videoCircleURL)?`<div class="mt">${esc(m.text||'')}</div>`:''}
       ${editBadge}
       <div class="mfoot"><span class="mtime">${ts}</span>${stHtml}</div>
     </div>
@@ -1951,6 +1960,146 @@ function compressImg(file,maxSz,q){
   });
 }
 
+// ═══ VIDEO CIRCLES ═══
+let videoCircleRecorder = null;
+let videoCircleStream = null;
+let videoCircleChunks = [];
+let videoCircleBlob = null;
+let vcRecInterval = null;
+let vcSeconds = 0;
+
+window.startVideoCircle = async () => {
+  if (!CHAT.id && CHAT.type !== 'fav') {
+    notify('⚠️', 'Выбери чат', '', '');
+    return;
+  }
+  
+  try {
+    videoCircleStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 640, facingMode: 'user' },
+      audio: true
+    });
+    
+    document.getElementById('vcPreview').srcObject = videoCircleStream;
+    document.getElementById('videoCircleMo').classList.add('open');
+    vcSeconds = 0;
+    updateVcTimer();
+  } catch (e) {
+    notify('⚠️', 'Нет доступа к камере', e.message, '');
+  }
+};
+
+window.closeVideoCircle = () => {
+  if (videoCircleStream) {
+    videoCircleStream.getTracks().forEach(t => t.stop());
+    videoCircleStream = null;
+  }
+  if (vcRecInterval) {
+    clearInterval(vcRecInterval);
+    vcRecInterval = null;
+  }
+  videoCircleRecorder = null;
+  videoCircleChunks = [];
+  videoCircleBlob = null;
+  document.getElementById('videoCircleMo').classList.remove('open');
+  document.getElementById('vcRecBtn').classList.remove('gone');
+  document.getElementById('vcSendBtn').classList.add('gone');
+  document.getElementById('vcRecIcon').textContent = '⏺';
+};
+
+window.toggleVideoCircleRec = () => {
+  if (!videoCircleRecorder || videoCircleRecorder.state === 'inactive') {
+    videoCircleChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
+    videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
+    
+    videoCircleRecorder.ondataavailable = e => {
+      if (e.data.size > 0) videoCircleChunks.push(e.data);
+    };
+    
+    videoCircleRecorder.onstop = () => {
+      videoCircleBlob = new Blob(videoCircleChunks, { type: mimeType });
+      document.getElementById('vcSendBtn').classList.remove('gone');
+    };
+    
+    videoCircleRecorder.start();
+    vcSeconds = 0;
+    vcRecInterval = setInterval(() => {
+      vcSeconds++;
+      updateVcTimer();
+      if (vcSeconds >= 60) toggleVideoCircleRec();
+    }, 1000);
+    
+    document.getElementById('vcRecIcon').textContent = '⏹';
+  } else {
+    videoCircleRecorder.stop();
+    clearInterval(vcRecInterval);
+    vcRecInterval = null;
+    document.getElementById('vcRecIcon').textContent = '⏺';
+    document.getElementById('vcRecBtn').classList.add('gone');
+  }
+};
+
+function updateVcTimer() {
+  const m = Math.floor(vcSeconds / 60);
+  const s = vcSeconds % 60;
+  document.getElementById('vcTimer').textContent = 
+    `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+window.sendVideoCircle = async () => {
+  if (!videoCircleBlob) return;
+  
+  notify('📹', 'Загружаю видео...', '', 'inf');
+  
+  try {
+    const fileName = `videocircle_${Date.now()}.webm`;
+    const storageRef = ref(storage, `videocircles/${CHAT.id}/${fileName}`);
+    await uploadBytes(storageRef, videoCircleBlob);
+    const videoURL = await getDownloadURL(storageRef);
+    
+    const msgData = {
+      videoCircleURL: videoURL,
+      duration: vcSeconds,
+      uid: ME.uid,
+      author: ME.name,
+      photoURL: ME.photoURL || '',
+      color: ME.color,
+      time: serverTimestamp(),
+      edited: false,
+      reactions: {}
+    };
+    
+    if (replyData) {
+      msgData.replyTo = replyData;
+      replyData = null;
+      document.getElementById('rbanner').classList.remove('show');
+    }
+    
+    if (CHAT.type === 'fav') {
+      await addDoc(collection(db, 'favorites', ME.uid, 'messages'), msgData);
+    } else {
+      await addDoc(collection(db, 'chats', CHAT.id, 'messages'), msgData);
+      
+      const ud = {
+        lastMsg: '📹 Видеосообщение',
+        lastTime: serverTimestamp()
+      };
+      if (CHAT.data?.members) {
+        CHAT.data.members.filter(m => m !== ME.uid).forEach(m => {
+          ud[`unread_${m}`] = increment(1);
+        });
+      }
+      await updateDoc(doc(db, 'chats', CHAT.id), ud);
+    }
+    
+    closeVideoCircle();
+    notify('✅', 'Видео отправлено!', '', 'ok');
+  } catch (e) {
+    notify('⚠️', 'Ошибка загрузки', e.message, '');
+  }
+};
+
 // ═══ MISC ═══
 window.closeMo=id=>document.getElementById(id).classList.remove('open');
 window.toggleSb=()=>document.getElementById('sidebar').classList.toggle('open');
@@ -2118,6 +2267,40 @@ window.seekVoice=(e,el,msgId)=>{
   const rect=el.getBoundingClientRect();
   const pct=(e.clientX-rect.left)/rect.width;
   a.currentTime=pct*a.duration;
+};
+
+// ═══ VIDEO CIRCLES RENDERING ═══
+// Добавьте функцию для форматирования длительности
+function formatDuration(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// Функция рендеринга видеокружка (аналогично buildVoiceHtml)
+function buildVideoCircleHtml(m) {
+  if (!m.videoCircleURL) return '';
+  const durStr = formatDuration(m.duration || 0);
+  
+  return `<div class="vc-msg">
+    <video id="vc_${m.id}" 
+           src="${m.videoCircleURL}" 
+           playsinline
+           onclick="toggleVideoPlay(this)"
+           style="width:200px;height:200px;border-radius:50%;object-fit:cover;cursor:pointer;background:#000;box-shadow:0 2px 8px rgba(0,0,0,0.2);"></video>
+    <div style="font-size:11px;color:var(--t2);margin-top:8px;text-align:center;">
+      📹 ${durStr}
+    </div>
+  </div>`;
+}
+
+// Функция для воспроизведения/паузы видео
+window.toggleVideoPlay = (videoEl) => {
+  if (videoEl.paused) {
+    videoEl.play();
+  } else {
+    videoEl.pause();
+  }
 };
 
 // ═══════════════════════════════
@@ -2368,5 +2551,26 @@ window.closeSb = () => {
     }
 };
 </script>
+<!-- VIDEO CIRCLE RECORDING -->
+<div class="mo" id="videoCircleMo" onclick="if(event.target===this)closeVideoCircle()">
+  <div class="mc" style="max-width:400px;">
+    <button class="mcx" onclick="closeVideoCircle()">✕</button>
+    <h3>Видеосообщение</h3>
+    <div style="text-align:center;">
+      <video id="vcPreview" autoplay muted playsinline 
+             style="width:280px;height:280px;border-radius:50%;object-fit:cover;background:#000;"></video>
+      <div style="margin-top:15px;font-size:13px;color:var(--t2);" id="vcTimer">00:00</div>
+      <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
+        <button class="btn" id="vcRecBtn" onclick="toggleVideoCircleRec()">
+          <span id="vcRecIcon">⏺</span> Записать
+        </button>
+        <button class="btn gone" id="vcSendBtn" onclick="sendVideoCircle()">
+          ✅ Отправить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
