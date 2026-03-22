@@ -940,64 +940,73 @@ let ppImg=null,ppRotation=0,ppDrawing=false,ppDrawMode=false;
 let fcmToken = null;
 // ═══ PUSH NOTIFICATIONS ═══
 async function initNotifications() {
+  // Проверка поддержки
   if (!('Notification' in window)) {
-    console.log('⚠️ Браузер не поддерживает уведомления');
+    console.log('⚠️ Уведомления не поддерживаются');
+    return;
+  }
+
+  // Проверка Service Worker
+  if (!('serviceWorker' in navigator)) {
+    console.log('⚠️ Service Worker не поддерживается');
     return;
   }
 
   try {
     // Регистрация Service Worker
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      scope: '/'
+    }).catch(err => {
+      console.log('⚠️ Service Worker не загружен:', err.message);
+      return null;
+    });
+
+    if (!registration) {
+      console.log('⚠️ Регистрация Service Worker пропущена');
+      return;
+    }
+
     console.log('✅ Service Worker зарегистрирован');
 
-    // Запрос разрешения на уведомления
-    const permission = await Notification.requestPermission();
+    // Запрос разрешения
+    const permission = await Notification.requestPermission().catch(() => 'denied');
     
-    if (permission === 'granted') {
-      console.log('✅ Разрешение на уведомления получено');
-      
-      // ВСТАВЬТЕ СЮДА ВАШ VAPID КЛЮЧ:
+    if (permission !== 'granted') {
+      console.log('⚠️ Разрешение не получено');
+      return;
+    }
+
+    console.log('✅ Разрешение получено');
+    
+    // Получение токена
+    try {
       fcmToken = await getToken(messaging, {
         vapidKey: 'BAnnUprwqs6u6HFL5shWVebruzLv9R5xXB0-9FiILcUhFaYSOzovuyJ2gFkzRIUGdxU9mezf8WeJP0WOuUFRuEM',
         serviceWorkerRegistration: registration
       });
       
-      if (fcmToken) {
-        console.log('✅ FCM Token получен:', fcmToken);
-        
-        // Сохраняем токен в Firestore
-        if (ME && ME.uid) {
-          await updateDoc(doc(db, 'users', ME.uid), {
-            fcmToken: fcmToken,
-            fcmTokenUpdated: serverTimestamp()
-          });
-          console.log('✅ Токен сохранён в базе');
-        }
+      if (fcmToken && ME && ME.uid) {
+        console.log('✅ FCM Token получен');
+        await updateDoc(doc(db, 'users', ME.uid), {
+          fcmToken: fcmToken,
+          fcmTokenUpdated: serverTimestamp()
+        }).catch(() => {});
       }
-    } else {
-      console.log('⚠️ Разрешение на уведомления отклонено');
+    } catch (tokenError) {
+      console.log('⚠️ Не удалось получить токен:', tokenError.message);
     }
 
-    // Обработка уведомлений когда сайт открыт
+    // Обработка уведомлений
     onMessage(messaging, (payload) => {
-      console.log('📩 Получено уведомление:', payload);
-      
+      console.log('📩 Уведомление:', payload);
       const title = payload.notification?.title || 'Новое сообщение';
       const body = payload.notification?.body || '';
-      
-      // Показываем через вашу систему notify
       notify('🔔', title, body, 'inf');
-      
-      // Звук (опционально)
-      try {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGWi78OScTgwOUKXh8LhjHAU2kdz1zn4yBSp+zPLaizsIHG7A7+OZURE');
-        audio.volume = 0.3;
-        audio.play().catch(() => {});
-      } catch (e) {}
     });
 
   } catch (error) {
-    console.error('❌ Ошибка инициализации уведомлений:', error);
+    console.error('❌ Ошибка инициализации:', error.message);
+    // НЕ блокируем приложение - просто логируем
   }
 }
 
