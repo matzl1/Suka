@@ -924,11 +924,6 @@ const fbApp=initializeApp(cfg);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 const messaging = getMessaging(fbApp);
-// ═══ FIREBASE MESSAGING ═══
-import { getMessaging, getToken, onMessage } 
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
-
-const messaging = getMessaging(fbApp);
 
 // ═══ STATE ═══
 let ME=null;
