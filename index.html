@@ -2067,6 +2067,98 @@ let vcRecInterval = null;
 let vcSeconds = 0;
 let currentCamera = 'user';
 
+window.startVideoCircle = async () => {
+  if (!CHAT.id && CHAT.type !== 'fav') {
+    notify('⚠️', 'Выбери чат', '', '');
+    return;
+  }
+  
+  currentCamera = 'user';
+  
+  try {
+    videoCircleStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 640, facingMode: currentCamera },
+      audio: true
+    });
+    
+    document.getElementById('vcPreview').srcObject = videoCircleStream;
+    document.getElementById('videoCircleMo').classList.add('open');
+    vcSeconds = 0;
+    updateVcTimer();
+  } catch (e) {
+    notify('⚠️', 'Нет доступа к камере', e.message, '');
+  }
+};
+
+window.closeVideoCircle = () => {
+  if (videoCircleStream) {
+    videoCircleStream.getTracks().forEach(t => t.stop());
+    videoCircleStream = null;
+  }
+  if (vcRecInterval) {
+    clearInterval(vcRecInterval);
+    vcRecInterval = null;
+  }
+  if (videoCircleRecorder) {
+    if (videoCircleRecorder.state !== 'inactive') {
+      videoCircleRecorder.stop();
+    }
+    videoCircleRecorder = null;
+  }
+  videoCircleChunks = [];
+  videoCircleBlob = null;
+  vcSeconds = 0;
+  
+  const preview = document.getElementById('vcPreview');
+  if (preview) preview.srcObject = null;
+  
+  document.getElementById('videoCircleMo').classList.remove('open');
+  document.getElementById('vcRecBtn').classList.remove('gone');
+  document.getElementById('vcSendBtn').classList.add('gone');
+  document.getElementById('vcRecIcon').textContent = '⏺';
+  updateVcTimer();
+};
+
+window.toggleVideoCircleRec = () => {
+  if (!videoCircleRecorder || videoCircleRecorder.state === 'inactive') {
+    videoCircleChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
+    videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
+    
+    videoCircleRecorder.ondataavailable = e => {
+      if (e.data.size > 0) videoCircleChunks.push(e.data);
+    };
+    
+    videoCircleRecorder.onstop = () => {
+      videoCircleBlob = new Blob(videoCircleChunks, { type: mimeType });
+      document.getElementById('vcSendBtn').classList.remove('gone');
+    };
+    
+    videoCircleRecorder.start();
+    vcSeconds = 0;
+    vcRecInterval = setInterval(() => {
+      vcSeconds++;
+      updateVcTimer();
+      if (vcSeconds >= 60) toggleVideoCircleRec();
+    }, 1000);
+    
+    document.getElementById('vcRecIcon').textContent = '⏹';
+  } else {
+    videoCircleRecorder.stop();
+    clearInterval(vcRecInterval);
+    vcRecInterval = null;
+    document.getElementById('vcRecIcon').textContent = '⏺';
+    document.getElementById('vcRecBtn').classList.add('gone');
+  }
+};
+
+function updateVcTimer() {
+  const m = Math.floor(vcSeconds / 60);
+  const s = vcSeconds % 60;
+  document.getElementById('vcTimer').textContent = 
+    `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 window.sendVideoCircle = async () => {
   if (!videoCircleBlob) return;
   
@@ -2110,6 +2202,28 @@ window.sendVideoCircle = async () => {
     }
   };
   reader.readAsDataURL(videoCircleBlob);
+};
+
+window.switchCamera = async () => {
+  if (!videoCircleStream || videoCircleRecorder?.state === 'recording') {
+    notify('⚠️', 'Остановите запись перед переключением', '', '');
+    return;
+  }
+  
+  videoCircleStream.getTracks().forEach(t => t.stop());
+  currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+  
+  try {
+    videoCircleStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 640, facingMode: currentCamera },
+      audio: true
+    });
+    
+    document.getElementById('vcPreview').srcObject = videoCircleStream;
+  } catch (e) {
+    notify('⚠️', 'Не удалось переключить камеру', e.message, '');
+    currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+  }
 };
 
 // Функция переключения камеры
