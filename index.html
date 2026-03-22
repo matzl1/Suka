@@ -2052,52 +2052,46 @@ window.sendVideoCircle = async () => {
   
   notify('📹', 'Загружаю видео...', '', 'inf');
   
-  try {
-    const fileName = `videocircle_${Date.now()}.webm`;
-    const storageRef = firebase.storage().ref(`videocircles/${CHAT.id}/${fileName}`);
-    await uploadBytes(storageRef, videoCircleBlob);
-    const videoURL = await getDownloadURL(storageRef);
-    
-    const msgData = {
-      videoCircleURL: videoURL,
-      duration: vcSeconds,
-      uid: ME.uid,
-      author: ME.name,
-      photoURL: ME.photoURL || '',
-      color: ME.color,
-      time: serverTimestamp(),
-      edited: false,
-      reactions: {}
-    };
-    
-    if (replyData) {
-      msgData.replyTo = replyData;
-      replyData = null;
-      document.getElementById('rbanner').classList.remove('show');
-    }
-    
-    if (CHAT.type === 'fav') {
-      await addDoc(collection(db, 'favorites', ME.uid, 'messages'), msgData);
-    } else {
-      await addDoc(collection(db, 'chats', CHAT.id, 'messages'), msgData);
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const col = CHAT.type === 'fav'
+        ? collection(db, 'favorites', ME.uid, 'messages')
+        : collection(db, 'chats', CHAT.id, 'messages');
       
-      const ud = {
-        lastMsg: '📹 Видеосообщение',
-        lastTime: serverTimestamp()
-      };
-      if (CHAT.data?.members) {
-        CHAT.data.members.filter(m => m !== ME.uid).forEach(m => {
-          ud[`unread_${m}`] = increment(1);
-        });
+      await addDoc(col, {
+        text: '',
+        videoCircleURL: e.target.result,
+        duration: vcSeconds,
+        uid: ME.uid,
+        author: ME.name,
+        color: ME.color,
+        time: serverTimestamp(),
+        edited: false,
+        read: false,
+        reactions: {}
+      });
+      
+      if (CHAT.type !== 'fav') {
+        const ud = {
+          lastMsg: '📹 Видеосообщение',
+          lastTime: serverTimestamp()
+        };
+        if (CHAT.data?.members) {
+          CHAT.data.members.filter(m => m !== ME.uid).forEach(m => {
+            ud[`unread_${m}`] = increment(1);
+          });
+        }
+        await updateDoc(doc(db, 'chats', CHAT.id), ud);
       }
-      await updateDoc(doc(db, 'chats', CHAT.id), ud);
+      
+      closeVideoCircle();
+      notify('✅', 'Видео отправлено!', '', 'ok');
+    } catch (er) {
+      notify('⚠️', 'Ошибка', er.message, '');
     }
-    
-    closeVideoCircle();
-    notify('✅', 'Видео отправлено!', '', 'ok');
-  } catch (e) {
-    notify('⚠️', 'Ошибка загрузки', e.message, '');
-  }
+  };
+  reader.readAsDataURL(videoCircleBlob);
 };
 
 // ═══ MISC ═══
