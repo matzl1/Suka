@@ -2050,8 +2050,6 @@ function updateVcTimer() {
 window.sendVideoCircle = async () => {
   if (!videoCircleBlob) return;
   
-  notify('📹', 'Загружаю видео...', '', 'inf');
-  
   const reader = new FileReader();
   reader.onload = async e => {
     try {
