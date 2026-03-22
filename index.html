@@ -154,18 +154,116 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 .rbanner-x{background:none;border:none;color:var(--t2);cursor:pointer;font-size:15px;}
 
 /* input */
-.izone{padding:9px 13px;border-top:1px solid var(--border);background:rgba(10,10,10,.96);backdrop-filter:blur(20px);padding-bottom:max(9px,env(safe-area-inset-bottom));}
-.irow{display:flex;align-items:flex-end;gap:7px;}
-.ibox{flex:1;display:flex;align-items:flex-end;gap:5px;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:7px 11px;transition:.18s;}
-.ibox:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--adim);}
-.ibox textarea{flex:1;background:none;border:none;outline:none;color:var(--t1);resize:none;max-height:100px;line-height:1.5;}
-.ibox textarea::placeholder{color:var(--t2);}
-.iico{background:none;border:none;color:var(--t2);font-size:17px;padding:2px;cursor:pointer;transition:.15s;flex-shrink:0;}
-.iico:hover{color:var(--t1);}
-.sndbtn{width:42px;height:42px;background:var(--acc);border:none;border-radius:13px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px var(--aglow);transition:.15s;flex-shrink:0;cursor:pointer;}
-.sndbtn:hover{background:var(--acc2);transform:scale(1.05);}
-.sndbtn:active{transform:scale(.94);}
-.channel-ro{padding:12px 16px;border-top:1px solid var(--border);background:rgba(10,10,10,.96);text-align:center;font-size:12px;color:var(--t2);}
+.izone{
+  padding:9px 13px;
+  border-top:1px solid var(--border);
+  background:rgba(10,10,10,.96);
+  backdrop-filter:blur(20px);
+  padding-bottom:max(9px,env(safe-area-inset-bottom));
+}
+.irow{
+  display:flex;
+  align-items:flex-end;
+  gap:6px;
+}
+.ibox{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:14px;
+  padding:7px 11px;
+  transition:.18s;
+  min-width:0;
+}
+.ibox:focus-within{
+  border-color:var(--acc);
+  box-shadow:0 0 0 3px var(--adim);
+}
+.ibox textarea{
+  flex:1;
+  background:none;
+  border:none;
+  outline:none;
+  color:var(--t1);
+  resize:none;
+  max-height:100px;
+  line-height:1.5;
+  min-width:0;
+}
+.ibox textarea::placeholder{
+  color:var(--t2);
+}
+.iico{
+  background:none;
+  border:none;
+  color:var(--t2);
+  font-size:20px;
+  padding:0;
+  cursor:pointer;
+  transition:.15s;
+  flex-shrink:0;
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.iico:hover{
+  color:var(--t1);
+}
+.sndbtn{
+  width:44px;
+  height:44px;
+  background:var(--acc);
+  border:none;
+  border-radius:13px;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 3px 12px var(--aglow);
+  transition:.15s;
+  flex-shrink:0;
+  cursor:pointer;
+}
+.sndbtn:hover{
+  background:var(--acc2);
+  transform:scale(1.05);
+}
+.sndbtn:active{
+  transform:scale(.94);
+}
+.channel-ro{
+  padding:12px 16px;
+  border-top:1px solid var(--border);
+  background:rgba(10,10,10,.96);
+  text-align:center;
+  font-size:12px;
+  color:var(--t2);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 640px) {
+  .irow{
+    gap:4px;
+  }
+  .ibox{
+    gap:4px;
+    padding:6px 9px;
+  }
+  .iico{
+    width:28px;
+    height:28px;
+    font-size:18px;
+  }
+  .sndbtn{
+    width:40px;
+    height:40px;
+  }
+}
 
 /* emoji */
 .ep{position:absolute;bottom:64px;left:13px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:9px;display:none;flex-wrap:wrap;gap:3px;width:210px;box-shadow:var(--shadow);z-index:50;}
@@ -1967,85 +2065,7 @@ let videoCircleChunks = [];
 let videoCircleBlob = null;
 let vcRecInterval = null;
 let vcSeconds = 0;
-
-window.startVideoCircle = async () => {
-  if (!CHAT.id && CHAT.type !== 'fav') {
-    notify('⚠️', 'Выбери чат', '', '');
-    return;
-  }
-  
-  try {
-    videoCircleStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 640, height: 640, facingMode: 'user' },
-      audio: true
-    });
-    
-    document.getElementById('vcPreview').srcObject = videoCircleStream;
-    document.getElementById('videoCircleMo').classList.add('open');
-    vcSeconds = 0;
-    updateVcTimer();
-  } catch (e) {
-    notify('⚠️', 'Нет доступа к камере', e.message, '');
-  }
-};
-
-window.closeVideoCircle = () => {
-  if (videoCircleStream) {
-    videoCircleStream.getTracks().forEach(t => t.stop());
-    videoCircleStream = null;
-  }
-  if (vcRecInterval) {
-    clearInterval(vcRecInterval);
-    vcRecInterval = null;
-  }
-  videoCircleRecorder = null;
-  videoCircleChunks = [];
-  videoCircleBlob = null;
-  document.getElementById('videoCircleMo').classList.remove('open');
-  document.getElementById('vcRecBtn').classList.remove('gone');
-  document.getElementById('vcSendBtn').classList.add('gone');
-  document.getElementById('vcRecIcon').textContent = '⏺';
-};
-
-window.toggleVideoCircleRec = () => {
-  if (!videoCircleRecorder || videoCircleRecorder.state === 'inactive') {
-    videoCircleChunks = [];
-    const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
-    videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
-    
-    videoCircleRecorder.ondataavailable = e => {
-      if (e.data.size > 0) videoCircleChunks.push(e.data);
-    };
-    
-    videoCircleRecorder.onstop = () => {
-      videoCircleBlob = new Blob(videoCircleChunks, { type: mimeType });
-      document.getElementById('vcSendBtn').classList.remove('gone');
-    };
-    
-    videoCircleRecorder.start();
-    vcSeconds = 0;
-    vcRecInterval = setInterval(() => {
-      vcSeconds++;
-      updateVcTimer();
-      if (vcSeconds >= 60) toggleVideoCircleRec();
-    }, 1000);
-    
-    document.getElementById('vcRecIcon').textContent = '⏹';
-  } else {
-    videoCircleRecorder.stop();
-    clearInterval(vcRecInterval);
-    vcRecInterval = null;
-    document.getElementById('vcRecIcon').textContent = '⏺';
-    document.getElementById('vcRecBtn').classList.add('gone');
-  }
-};
-
-function updateVcTimer() {
-  const m = Math.floor(vcSeconds / 60);
-  const s = vcSeconds % 60;
-  document.getElementById('vcTimer').textContent = 
-    `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
+let currentCamera = 'user';
 
 window.sendVideoCircle = async () => {
   if (!videoCircleBlob) return;
@@ -2091,6 +2111,35 @@ window.sendVideoCircle = async () => {
   };
   reader.readAsDataURL(videoCircleBlob);
 };
+
+// Функция переключения камеры
+window.switchCamera = async () => {
+  if (!videoCircleStream || videoCircleRecorder?.state === 'recording') {
+    notify('⚠️', 'Остановите запись перед переключением', '', '');
+    return;
+  }
+  
+  // Останавливаем текущий поток
+  videoCircleStream.getTracks().forEach(t => t.stop());
+  
+  // Переключаем камеру
+  currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+  
+  try {
+    // Получаем новый поток с другой камерой
+    videoCircleStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 640, facingMode: currentCamera },
+      audio: true
+    });
+    
+    document.getElementById('vcPreview').srcObject = videoCircleStream;
+  } catch (e) {
+    notify('⚠️', 'Не удалось переключить камеру', e.message, '');
+    // Возвращаем обратно
+    currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+  }
+};
+
 
 // ═══ MISC ═══
 window.closeMo=id=>document.getElementById(id).classList.remove('open');
@@ -2549,8 +2598,15 @@ window.closeSb = () => {
     <button class="mcx" onclick="closeVideoCircle()">✕</button>
     <h3>Видеосообщение</h3>
     <div style="text-align:center;">
-      <video id="vcPreview" autoplay muted playsinline 
-             style="width:280px;height:280px;border-radius:50%;object-fit:cover;background:#000;"></video>
+      <div style="position:relative;display:inline-block;">
+        <video id="vcPreview" autoplay muted playsinline 
+               style="width:280px;height:280px;border-radius:50%;object-fit:cover;background:#000;"></video>
+        <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ КАМЕРЫ -->
+        <button onclick="switchCamera()" id="vcSwitchCam"
+                style="position:absolute;bottom:10px;right:10px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);border:2px solid rgba(255,255,255,0.3);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;">
+          🔄
+        </button>
+      </div>
       <div style="margin-top:15px;font-size:13px;color:var(--t2);" id="vcTimer">00:00</div>
       <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
         <button class="btn" id="vcRecBtn" onclick="toggleVideoCircleRec()">
