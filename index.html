@@ -2054,7 +2054,7 @@ window.sendVideoCircle = async () => {
   
   try {
     const fileName = `videocircle_${Date.now()}.webm`;
-    const storageRef = ref(storage, `videocircles/${CHAT.id}/${fileName}`);
+    const storageRef = firebase.storage().ref(`videocircles/${CHAT.id}/${fileName}`);
     await uploadBytes(storageRef, videoCircleBlob);
     const videoURL = await getDownloadURL(storageRef);
     
