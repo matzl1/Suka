@@ -2212,9 +2212,13 @@ window.switchCamera = async () => {
   
   const wasRecording = videoCircleRecorder?.state === 'recording';
   
-  // Если идёт запись — останавливаем временно
+  // Если идёт запись — останавливаем и сохраняем
   if (wasRecording) {
-    videoCircleRecorder.pause();
+    videoCircleRecorder.stop();
+    // Ждём пока данные сохранятся
+    await new Promise(resolve => {
+      videoCircleRecorder.onstop = resolve;
+    });
   }
   
   // Останавливаем текущий поток
@@ -2232,10 +2236,9 @@ window.switchCamera = async () => {
     
     document.getElementById('vcPreview').srcObject = videoCircleStream;
     
-    // Если была запись — создаём новый рекордер с новым потоком и продолжаем
+    // Если была запись — создаём новый рекордер и продолжаем
     if (wasRecording) {
       const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
-      const oldChunks = [...videoCircleChunks]; // Сохраняем старые куски
       
       videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
       
@@ -2248,17 +2251,13 @@ window.switchCamera = async () => {
         document.getElementById('vcSendBtn').classList.remove('gone');
       };
       
-      // Добавляем старые куски обратно
-      videoCircleChunks = oldChunks;
-      
-      // Продолжаем запись
+      // Продолжаем запись (старые куски уже в videoCircleChunks)
       videoCircleRecorder.start();
     }
     
-    notify('✅', currentCamera === 'user' ? 'Фронтальная камера' : 'Задняя камера', '', 'ok');
+    notify('✅', currentCamera === 'user' ? 'Фронтальная 📷' : 'Задняя 📷', '', 'ok');
   } catch (e) {
     notify('⚠️', 'Не удалось переключить камеру', e.message, '');
-    // Возвращаем обратно
     currentCamera = currentCamera === 'user' ? 'environment' : 'user';
   }
 };
