@@ -916,10 +916,14 @@ import { getFirestore, collection, addDoc, query, orderBy,
   getDoc, getDocs, updateDoc, where, increment, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+  import { getMessaging, getToken, onMessage } 
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
 const cfg={apiKey:"AIzaSyAdMzyCRaXOkDn-a0D4ImxeZ4MXSfxdkjY",authDomain:"suka-81061.firebaseapp.com",projectId:"suka-81061",storageBucket:"suka-81061.firebasestorage.app",messagingSenderId:"238446297432",appId:"1:238446297432:web:b34b9eb890654aa693252d"};
 const fbApp=initializeApp(cfg);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
+const messaging = getMessaging(fbApp);
 // ═══ FIREBASE MESSAGING ═══
 import { getMessaging, getToken, onMessage } 
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
@@ -1182,10 +1186,8 @@ function showApp(){
   loadChatList();
   notify('🔥','Добро пожаловать!',ME.name,'ok');
   setTimeout(()=>listenIncomingCalls(),1000);
-}
-
-  // Инициализация push-уведомлений
   initNotifications();
+}
 
 // ═══ CHAT LIST ═══
 function loadChatList(){
