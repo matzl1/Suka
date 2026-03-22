@@ -949,7 +949,7 @@ async function initNotifications() {
 
   try {
     // Регистрация Service Worker
-    const registration = await navigator.serviceWorker.register('/Suka/firebase-messaging-sw.js', {
+    const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
       scope: '/'
     }).catch(err => {
       console.log('⚠️ Service Worker не загружен:', err.message);
