@@ -154,18 +154,169 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 .rbanner-x{background:none;border:none;color:var(--t2);cursor:pointer;font-size:15px;}
 
 /* input */
-.izone{padding:9px 13px;border-top:1px solid var(--border);background:rgba(10,10,10,.96);backdrop-filter:blur(20px);padding-bottom:max(9px,env(safe-area-inset-bottom));}
-.irow{display:flex;align-items:flex-end;gap:7px;}
-.ibox{flex:1;display:flex;align-items:flex-end;gap:5px;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:7px 11px;transition:.18s;}
-.ibox:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--adim);}
-.ibox textarea{flex:1;background:none;border:none;outline:none;color:var(--t1);resize:none;max-height:100px;line-height:1.5;}
-.ibox textarea::placeholder{color:var(--t2);}
-.iico{background:none;border:none;color:var(--t2);font-size:17px;padding:2px;cursor:pointer;transition:.15s;flex-shrink:0;}
-.iico:hover{color:var(--t1);}
-.sndbtn{width:42px;height:42px;background:var(--acc);border:none;border-radius:13px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px var(--aglow);transition:.15s;flex-shrink:0;cursor:pointer;}
-.sndbtn:hover{background:var(--acc2);transform:scale(1.05);}
-.sndbtn:active{transform:scale(.94);}
-.channel-ro{padding:12px 16px;border-top:1px solid var(--border);background:rgba(10,10,10,.96);text-align:center;font-size:12px;color:var(--t2);}
+.izone {
+  padding: 9px 13px;
+  border-top: 1px solid var(--border);
+  background: rgba(10, 10, 10, 0.96);
+  backdrop-filter: blur(20px);
+  padding-bottom: max(9px, env(safe-area-inset-bottom));
+}
+
+.irow {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.ibox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 7px 11px;
+  transition: 0.18s;
+  min-width: 0;
+}
+
+.ibox:focus-within {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--adim);
+}
+
+.ibox textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--t1);
+  resize: none;
+  max-height: 100px;
+  line-height: 1.5;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.ibox textarea::placeholder {
+  color: var(--t2);
+}
+
+.iico {
+  background: none;
+  border: none;
+  color: var(--t2);
+  font-size: 20px;
+  padding: 0;
+  cursor: pointer;
+  transition: 0.15s;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iico:hover {
+  color: var(--t1);
+  transform: scale(1.05);
+}
+
+.iico:active {
+  transform: scale(0.95);
+}
+
+.sndbtn {
+  width: 44px;
+  height: 44px;
+  background: var(--acc);
+  border: none;
+  border-radius: 13px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 12px var(--aglow);
+  transition: 0.15s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.sndbtn:hover {
+  background: var(--acc2);
+  transform: scale(1.05);
+}
+
+.sndbtn:active {
+  transform: scale(0.94);
+}
+
+.channel-ro {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(10, 10, 10, 0.96);
+  text-align: center;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+/* Мобильная адаптация панели ввода */
+@media (max-width: 640px) {
+  .izone {
+    padding: 8px 10px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .irow {
+    gap: 6px;
+  }
+
+  .ibox {
+    padding: 6px 9px;
+    gap: 5px;
+  }
+
+  .ibox textarea {
+    font-size: 15px;
+    max-height: 90px;
+  }
+
+  .iico {
+    width: 30px;
+    height: 30px;
+    font-size: 19px;
+  }
+
+  .sndbtn {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 375px) {
+  .irow {
+    gap: 5px;
+  }
+
+  .ibox {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+
+  .iico {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+
+  .sndbtn {
+    width: 40px;
+    height: 40px;
+  }
+}
 
 /* emoji */
 .ep{position:absolute;bottom:64px;left:13px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:9px;display:none;flex-wrap:wrap;gap:3px;width:210px;box-shadow:var(--shadow);z-index:50;}
