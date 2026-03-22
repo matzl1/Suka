@@ -2212,13 +2212,9 @@ window.switchCamera = async () => {
   
   const wasRecording = videoCircleRecorder?.state === 'recording';
   
-  // Если идёт запись — останавливаем и сохраняем
+  // Если идёт запись — останавливаем
   if (wasRecording) {
     videoCircleRecorder.stop();
-    // Ждём пока данные сохранятся
-    await new Promise(resolve => {
-      videoCircleRecorder.onstop = resolve;
-    });
   }
   
   // Останавливаем текущий поток
@@ -2236,23 +2232,24 @@ window.switchCamera = async () => {
     
     document.getElementById('vcPreview').srcObject = videoCircleStream;
     
-    // Если была запись — создаём новый рекордер и продолжаем
+    // Если была запись — продолжаем через 300мс (чтобы данные сохранились)
     if (wasRecording) {
-      const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
-      
-      videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
-      
-      videoCircleRecorder.ondataavailable = e => {
-        if (e.data.size > 0) videoCircleChunks.push(e.data);
-      };
-      
-      videoCircleRecorder.onstop = () => {
-        videoCircleBlob = new Blob(videoCircleChunks, { type: mimeType });
-        document.getElementById('vcSendBtn').classList.remove('gone');
-      };
-      
-      // Продолжаем запись (старые куски уже в videoCircleChunks)
-      videoCircleRecorder.start();
+      setTimeout(() => {
+        const mimeType = MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
+        
+        videoCircleRecorder = new MediaRecorder(videoCircleStream, { mimeType });
+        
+        videoCircleRecorder.ondataavailable = e => {
+          if (e.data.size > 0) videoCircleChunks.push(e.data);
+        };
+        
+        videoCircleRecorder.onstop = () => {
+          videoCircleBlob = new Blob(videoCircleChunks, { type: mimeType });
+          document.getElementById('vcSendBtn').classList.remove('gone');
+        };
+        
+        videoCircleRecorder.start();
+      }, 300);
     }
     
     notify('✅', currentCamera === 'user' ? 'Фронтальная 📷' : 'Задняя 📷', '', 'ok');
