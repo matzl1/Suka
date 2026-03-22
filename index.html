@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0a">
-<title>SUKA Messenger</title>
+<title>NEXT Messenger</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -542,14 +542,14 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 <body>
 
 <!-- LOADER -->
-<div id="loader"><div class="ld">SUKA</div><div style="font-size:10px;color:var(--t2);letter-spacing:2px;">ЗАГРУЗКА...</div></div>
+<div id="loader"><div class="ld">NEXT</div><div style="font-size:10px;color:var(--t2);letter-spacing:2px;">ЗАГРУЗКА...</div></div>
 
 <!-- AUTH -->
 <div id="auth" class="gone">
   <div class="abg"></div>
   <div class="ac">
     <div class="alogo">
-      <div class="alogo-row"><div class="alogo-ic">💬</div><h1>SUKA</h1></div>
+      <div class="alogo-row"><div class="alogo-ic">💬</div><h1>NEXT</h1></div>
       <p>Messenger · пиши друзьям</p>
     </div>
     <div id="pLogin">
@@ -582,7 +582,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 <div id="app" class="gone">
   <div class="sb" id="sidebar">
     <div class="sb-head">
-      <div class="sb-logo">SUKA</div>
+      <div class="sb-logo">NEXT</div>
       <button class="ib" onclick="openCreateGroup()" title="Создать группу">👥</button>
       <button class="ib" onclick="openCreateChannel()" title="Создать канал">📢</button>
       <button class="ib" onclick="openMyProfile()" title="Профиль">👤</button>
@@ -611,7 +611,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
 
   <div class="ca" id="ca">
     <div class="welcome" id="welcome">
-      <div class="welcome-logo">SUKA</div>
+      <div class="welcome-logo">NEXT</div>
       <p style="font-size:13px;text-align:center;line-height:1.7;max-width:230px;">Выбери чат или найди друга 💬</p>
     </div>
     <div id="chatView" class="gone" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
@@ -733,7 +733,7 @@ button,input,textarea,select{font-family:inherit;font-size:16px;}
       <div id="pvAts" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:4px;"></div>
       <div class="pv-bio" id="pvBio"></div>
     </div>
-    <div class="info-row"><span class="info-icon">📅</span><div><div class="info-label">В SUKA с</div><div class="info-val" id="pvJoined">...</div></div></div>
+    <div class="info-row"><span class="info-icon">📅</span><div><div class="info-label">В NEXT с</div><div class="info-val" id="pvJoined">...</div></div></div>
     <button class="mbtn pr" onclick="pvStartDM()">Написать сообщение</button>
   </div>
 </div>
@@ -916,7 +916,7 @@ import { getFirestore, collection, addDoc, query, orderBy,
   getDoc, getDocs, updateDoc, where, increment, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const cfg={apiKey:"AIzaSyAdMzyCRaXOkDn-a0D4ImxeZ4MXSfxdkjY",authDomain:"suka-81061.firebaseapp.com",projectId:"suka-81061",storageBucket:"suka-81061.firebasestorage.app",messagingSenderId:"238446297432",appId:"1:238446297432:web:b34b9eb890654aa693252d"};
+const cfg={apiKey:"AIzaSyAdMzyCRaXOkDn-a0D4ImxeZ4MXSfxdkjY",authDomain:"NEXT-81061.firebaseapp.com",projectId:"NEXT-81061",storageBucket:"NEXT-81061.firebasestorage.app",messagingSenderId:"238446297432",appId:"1:238446297432:web:b34b9eb890654aa693252d"};
 const fbApp=initializeApp(cfg);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
@@ -956,7 +956,7 @@ function setActive(id){
 // ═══ THEME ═══
 const THEMES=['#e8000d','#3b82f6','#22c55e','#7c6aff','#f97316','#ec4899','#06b6d4','#84cc16','#fbbf24','#ef4444','#a855f7','#14b8a6'];
 // текущий цвет храним отдельно чтобы не зависеть от getComputedStyle
-let currentAccent = localStorage.getItem('suka_theme') || '#e8000d';
+let currentAccent = localStorage.getItem('NEXT_theme') || '#e8000d';
 
 window.applyTheme=color=>{
   currentAccent=color;
@@ -968,7 +968,7 @@ window.applyTheme=color=>{
   let styleEl=document.getElementById('dynamic-theme');
   if(!styleEl){styleEl=document.createElement('style');styleEl.id='dynamic-theme';document.head.appendChild(styleEl);}
   styleEl.textContent=`:root{--acc:${color}!important;--acc2:${acc2}!important;--adim:${adim}!important;--aglow:${aglow}!important;}`;
-  localStorage.setItem('suka_theme',color);
+  localStorage.setItem('NEXT_theme',color);
   const cc=document.getElementById('customColor');
   if(cc)cc.value=color;
   renderThemeGrid();
@@ -1000,7 +1000,7 @@ window.setDarkMode=dark=>{
     document.documentElement.style.setProperty('--t3','#c0c4d6');
     document.documentElement.style.setProperty('--border','rgba(0,0,0,.08)');
   }
-  localStorage.setItem('suka_dark',dark?'1':'0');
+  localStorage.setItem('NEXT_dark',dark?'1':'0');
 };
 
 window.openSettings=()=>{
@@ -1017,7 +1017,7 @@ window.renderThemeGrid=()=>{
 
 // Load saved theme
 if(currentAccent) window.applyTheme(currentAccent);
-const savedDark=localStorage.getItem('suka_dark');
+const savedDark=localStorage.getItem('NEXT_dark');
 if(savedDark==='0') window.setDarkMode(false);
 
 // ═══ AUTH STATE ═══
